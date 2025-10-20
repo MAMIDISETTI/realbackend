@@ -60,6 +60,21 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Handle preflight requests
+app.options('*', (req, res) => {
+  console.log('Preflight request received for:', req.url);
+  console.log('Origin:', req.headers.origin);
+  console.log('Method:', req.headers['access-control-request-method']);
+  console.log('Headers:', req.headers['access-control-request-headers']);
+  
+  res.header('Access-Control-Allow-Origin', req.headers.origin || process.env.FRONTEND_URL);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Expose-Headers', 'Set-Cookie');
+  res.status(200).end();
+});
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -131,13 +146,48 @@ app.get('/api/debug-cookies', (req, res) => {
   console.log('Access token cookie:', req.cookies.accessToken);
   console.log('Refresh token cookie:', req.cookies.refreshToken);
   console.log('Debug access token cookie:', req.cookies.accessTokenDebug);
+  console.log('Request headers:', req.headers);
+  console.log('Origin:', req.headers.origin);
   
   res.json({
     success: true,
     allCookies: req.cookies,
     accessToken: req.cookies.accessToken ? 'Present' : 'Missing',
     refreshToken: req.cookies.refreshToken ? 'Present' : 'Missing',
-    debugAccessToken: req.cookies.accessTokenDebug ? 'Present' : 'Missing'
+    debugAccessToken: req.cookies.accessTokenDebug ? 'Present' : 'Missing',
+    headers: req.headers,
+    origin: req.headers.origin
+  });
+});
+
+// Test login endpoint that shows cookie setting
+app.post('/api/test-login', (req, res) => {
+  console.log('Test login endpoint called');
+  console.log('Request body:', req.body);
+  console.log('Request cookies:', req.cookies);
+  
+  // Set test cookies
+  res.cookie('testAccessToken', 'test-access-token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/'
+  });
+  
+  res.cookie('testRefreshToken', 'test-refresh-token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/'
+  });
+  
+  res.json({
+    success: true,
+    message: 'Test cookies set',
+    environment: process.env.NODE_ENV,
+    frontendUrl: process.env.FRONTEND_URL
   });
 });
 

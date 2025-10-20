@@ -4,9 +4,15 @@ const User = require('../models/User');
 // Verify JWT token from cookies
 const authenticateToken = async (req, res, next) => {
   try {
+    console.log('Auth middleware - Request cookies:', req.cookies);
+    console.log('Auth middleware - Request headers:', req.headers);
+    console.log('Auth middleware - Origin:', req.headers.origin);
+    
     const token = req.cookies.accessToken;
+    console.log('Auth middleware - Access token found:', !!token);
     
     if (!token) {
+      console.log('Auth middleware - No access token found');
       return res.status(401).json({
         success: false,
         message: 'Access token not found. Please login again.'
