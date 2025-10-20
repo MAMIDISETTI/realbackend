@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: learning-platform-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: PAYMENT_CURRENCY
+        value: INR
+      - key: REGISTRATION_FEE_AMOUNT
+        value: 699
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@learningplatform.com
+      - key: ADMIN_PASSWORD
+        value: Admin123!
+      - key: ADMIN_FIRST_NAME
+        value: Admin
+      - key: ADMIN_LAST_NAME
+        value: User
+      - key: BETA_EMAIL
+        value: beta@learningplatform.com
+      - key: BETA_PASSWORD
+        value: Beta123!
+      - key: BETA_FIRST_NAME
+        value: Beta
+      - key: BETA_LAST_NAME
+        value: User
