@@ -151,18 +151,24 @@ const generateTokens = (userId) => {
 
 // Set token cookies
 const setTokenCookies = (res, accessToken, refreshToken) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'strict', // 'none' for cross-origin in production
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/',
+    ...(isProduction && { domain: process.env.COOKIE_DOMAIN }) // Set domain if provided
   };
 
   const refreshCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'strict', // 'none' for cross-origin in production
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
+    ...(isProduction && { domain: process.env.COOKIE_DOMAIN }) // Set domain if provided
   };
 
   res.cookie('accessToken', accessToken, cookieOptions);
@@ -171,8 +177,18 @@ const setTokenCookies = (res, accessToken, refreshToken) => {
 
 // Clear token cookies
 const clearTokenCookies = (res) => {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  const clearOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'strict',
+    path: '/',
+    ...(isProduction && { domain: process.env.COOKIE_DOMAIN })
+  };
+
+  res.clearCookie('accessToken', clearOptions);
+  res.clearCookie('refreshToken', clearOptions);
 };
 
 module.exports = {
