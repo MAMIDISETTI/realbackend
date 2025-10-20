@@ -160,6 +160,9 @@ router.post('/login', loginValidation, async (req, res) => {
 
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user.author_id);
+    console.log('Generated tokens for user:', user.email);
+    console.log('Access token length:', accessToken.length);
+    console.log('Refresh token length:', refreshToken.length);
 
     // Save refresh token to user
     user.refreshTokens.push({ token: refreshToken });
@@ -167,7 +170,9 @@ router.post('/login', loginValidation, async (req, res) => {
     await user.save();
 
     // Set cookies
+    console.log('Setting cookies...');
     setTokenCookies(res, accessToken, refreshToken);
+    console.log('Cookies set successfully');
 
     res.json({
       success: true,

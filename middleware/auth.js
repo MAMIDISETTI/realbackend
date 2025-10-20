@@ -153,26 +153,66 @@ const generateTokens = (userId) => {
 const setTokenCookies = (res, accessToken, refreshToken) => {
   const isProduction = process.env.NODE_ENV === 'production';
   
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Is Production:', isProduction);
+  console.log('Frontend URL:', process.env.FRONTEND_URL);
+  
+  // For production cross-origin cookies, we need specific settings
   const cookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'strict', // 'none' for cross-origin in production
+    secure: isProduction, // Must be true for HTTPS in production
+    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/',
-    ...(isProduction && { domain: process.env.COOKIE_DOMAIN }) // Set domain if provided
+    // Don't set domain for cross-origin cookies
   };
 
   const refreshCookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'strict', // 'none' for cross-origin in production
+    secure: isProduction, // Must be true for HTTPS in production
+    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
-    ...(isProduction && { domain: process.env.COOKIE_DOMAIN }) // Set domain if provided
+    // Don't set domain for cross-origin cookies
   };
 
-  res.cookie('accessToken', accessToken, cookieOptions);
-  res.cookie('refreshToken', refreshToken, refreshCookieOptions);
+  console.log('Setting cookies with options:', cookieOptions);
+  console.log('Refresh cookie options:', refreshCookieOptions);
+  
+  try {
+    res.cookie('accessToken', accessToken, cookieOptions);
+    console.log('Access token cookie set successfully');
+    
+    // Also set a non-httpOnly version for debugging
+    res.cookie('accessTokenDebug', accessToken, {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/'
+    });
+    console.log('Debug access token cookie set');
+  } catch (error) {
+    console.error('Error setting access token cookie:', error);
+  }
+  
+  try {
+    res.cookie('refreshToken', refreshToken, refreshCookieOptions);
+    console.log('Refresh token cookie set successfully');
+  } catch (error) {
+    console.error('Error setting refresh token cookie:', error);
+  }
+  
+  // Set CORS headers for cross-origin cookie support
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+  
+  // Additional headers for cross-origin cookie support
+  if (isProduction) {
+    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With');
+  }
 };
 
 // Clear token cookies
@@ -182,11 +222,12 @@ const clearTokenCookies = (res) => {
   const clearOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'strict',
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/',
-    ...(isProduction && { domain: process.env.COOKIE_DOMAIN })
+    ...(isProduction && process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN })
   };
 
+  console.log('Clearing cookies with options:', clearOptions);
   res.clearCookie('accessToken', clearOptions);
   res.clearCookie('refreshToken', clearOptions);
 };

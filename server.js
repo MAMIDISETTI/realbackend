@@ -29,6 +29,9 @@ app.use(limiter);
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log('CORS Origin check:', origin);
+    console.log('Frontend URL:', process.env.FRONTEND_URL);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
@@ -38,16 +41,21 @@ const corsOptions = {
       'https://localhost:3000'
     ];
     
+    console.log('Allowed origins:', allowedOrigins);
+    
     if (allowedOrigins.includes(origin)) {
+      console.log('Origin allowed:', origin);
       callback(null, true);
     } else {
+      console.log('Origin not allowed:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-  exposedHeaders: ['Set-Cookie']
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 };
 
 app.use(cors(corsOptions));
@@ -89,6 +97,47 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     message: 'Learning Platform API is running',
     timestamp: new Date().toISOString()
+  });
+});
+
+// Test cookie endpoint
+app.get('/api/test-cookie', (req, res) => {
+  console.log('Test cookie endpoint called');
+  console.log('Request cookies:', req.cookies);
+  console.log('Request headers:', req.headers);
+  
+  // Set a test cookie
+  res.cookie('testCookie', 'test-value', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 60000, // 1 minute
+    path: '/'
+  });
+  
+  res.json({
+    success: true,
+    message: 'Test cookie set',
+    receivedCookies: req.cookies,
+    environment: process.env.NODE_ENV,
+    headers: req.headers
+  });
+});
+
+// Debug cookies endpoint
+app.get('/api/debug-cookies', (req, res) => {
+  console.log('Debug cookies endpoint called');
+  console.log('All cookies:', req.cookies);
+  console.log('Access token cookie:', req.cookies.accessToken);
+  console.log('Refresh token cookie:', req.cookies.refreshToken);
+  console.log('Debug access token cookie:', req.cookies.accessTokenDebug);
+  
+  res.json({
+    success: true,
+    allCookies: req.cookies,
+    accessToken: req.cookies.accessToken ? 'Present' : 'Missing',
+    refreshToken: req.cookies.refreshToken ? 'Present' : 'Missing',
+    debugAccessToken: req.cookies.accessTokenDebug ? 'Present' : 'Missing'
   });
 });
 
